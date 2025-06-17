@@ -1,73 +1,83 @@
-# Welcome to your Lovable project
+# Hệ thống Quản lý Điểm - Khoa An toàn thông tin KMA
 
-## Project info
+[cite_start]Đây là một dự án quản lý điểm cho sinh viên Học viện Kỹ thuật Mật mã (KMA), được phát triển với mục đích học tập và nghiên cứu về an toàn mạng. 
 
-**URL**: https://lovable.dev/projects/4cb922cc-d7cf-42e5-9af0-3d179b4484b8
+## Công nghệ sử dụng
 
-## How can I edit this code?
+Dự án được xây dựng theo kiến trúc full-stack bao gồm:
 
-There are several ways of editing your application.
+* [cite_start]**Frontend:** 
+    * Framework: **React** (với TypeScript)
+    * Routing: **React Router**
+    * UI: **shadcn/ui** và **Tailwind CSS**
+    * Build tool: **Vite**
+* [cite_start]**Backend:** 
+    * Framework: **NestJS**
+    * Cơ sở dữ liệu: **PostgreSQL**
+    * ORM: **TypeORM**
+* [cite_start]**Xác thực & Phân quyền (IAM):** 
+    * **Keycloak** (OpenID Connect/OAuth 2.0)
 
-**Use Lovable**
+## Cấu trúc dự án
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/4cb922cc-d7cf-42e5-9af0-3d179b4484b8) and start prompting.
+Dự án được tổ chức theo dạng monorepo:
 
-Changes made via Lovable will be committed automatically to this repo.
+* `/`: Thư mục gốc chứa mã nguồn Frontend (React).
+* `/score-backend`: Thư mục chứa mã nguồn Backend (NestJS).
 
-**Use your preferred IDE**
+## Hướng dẫn cài đặt và chạy dự án
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Yêu cầu
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+* [Node.js](https://nodejs.org/) (phiên bản >= 20.11)
+* [Docker](https://www.docker.com/) và [Docker Compose](https://docs.docker.com/compose/)
 
-Follow these steps:
+### 1. Cài đặt Keycloak và PostgreSQL
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+[cite_start]Chúng tôi khuyến khích sử dụng Docker để khởi tạo Keycloak và PostgreSQL một cách nhanh chóng. 
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Tạo một file `docker-compose.yml` ở thư mục gốc của dự án với nội dung sau:
 
-# Step 3: Install the necessary dependencies.
-npm i
+```yaml
+version: '3.8'
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+services:
+  postgres:
+    image: postgres:15
+    container_name: kma_postgres_db
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password # Đổi mật khẩu này trong môi trường production
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kma-network
 
-**Edit a file directly in GitHub**
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.4
+    container_name: kma_keycloak
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password # Phải trùng với mật khẩu ở trên
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - kma-network
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+networks:
+  kma-network:
+    driver: bridge
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/4cb922cc-d7cf-42e5-9af0-3d179b4484b8) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+volumes:
+  postgres_data:
