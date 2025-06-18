@@ -1,15 +1,14 @@
 // src/context/AuthContext.tsx
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
-// Define user data type from token
 interface User {
   sub: string;
   email: string;
-  // Add other fields if needed, e.g.: roles
+  roles?: string[];
 }
 
-// Define Context type
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
@@ -18,49 +17,55 @@ interface AuthContextType {
   logout: () => void;
 }
 
-// Create Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create Provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
+  // Hàm giải mã và set state
+  const handleToken = (token: string) => {
+    try {
+      const decodedUser = jwtDecode<User>(token);
+      setUser(decodedUser);
+      setToken(token);
+      localStorage.setItem('authToken', token);
+    } catch (error) {
+      console.error("Invalid token:", error);
+      logout();
+    }
+  }
+
   useEffect(() => {
     const storedToken = localStorage.getItem('authToken');
     if (storedToken) {
-      setToken(storedToken);
-      // You can decode the token here to get user info if needed
+      handleToken(storedToken);
     }
   }, []);
 
   const login = (newToken: string) => {
-    localStorage.setItem('authToken', newToken);
-    setToken(newToken);
-    // Temporarily set user as an empty object, will update after callback page
-    setUser({ sub: '', email: '' }); 
+    handleToken(newToken);
   };
 
   const logout = () => {
     localStorage.removeItem('authToken');
     setToken(null);
     setUser(null);
-    // After removing token, redirect to home page
-    window.location.href = '/';
-  };
+    // Chuyển hướng tới backend để đăng xuất khỏi Keycloak
+    window.location.href = 'http://localhost:3001/api/auth/logout';
+};
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!token, token, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated: !!token, user, token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Create custom hook to use AuthContext more easily
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

@@ -11,6 +11,8 @@ import TeacherDashboard from "./pages/TeacherDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./context/AuthContext";
+import AuthCallback from "./pages/AuthCallback"; // Thêm import
+import ProtectedRoute from "./components/ProtectedRoute"; // Thêm import
 
 const queryClient = new QueryClient();
 
@@ -19,15 +21,21 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      {/* Bọc ứng dụng trong AuthProvider */}
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* Route công khai */}
             <Route path="/" element={<Index />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/teacher" element={<TeacherDashboard />} />
-            <Route path="/student" element={<StudentDashboard />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/auth/callback" element={<AuthCallback />} />
+
+            {/* Các route được bảo vệ */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/teacher" element={<TeacherDashboard />} />
+              <Route path="/student" element={<StudentDashboard />} />
+            </Route>
+
+            {/* Route bắt lỗi 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
