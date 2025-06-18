@@ -1,5 +1,3 @@
-// src/pages/Index.tsx
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,8 +8,6 @@ const Index = () => {
 
   const handleLogin = () => {
     setIsLoading(true);
-    // Chuyển hướng người dùng đến endpoint đăng nhập của backend
-    // Backend sẽ xử lý việc chuyển hướng tới Keycloak
     window.location.href = "http://localhost:3001/api/auth/login";
   };
 

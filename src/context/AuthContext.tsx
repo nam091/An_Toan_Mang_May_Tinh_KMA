@@ -1,5 +1,3 @@
-// src/context/AuthContext.tsx
-
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
@@ -23,16 +21,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
-  // Hàm giải mã và set state
-  const handleToken = (token: string) => {
-    try {
-      const decodedUser = jwtDecode<User>(token);
-      setUser(decodedUser);
-      setToken(token);
-      localStorage.setItem('authToken', token);
-    } catch (error) {
-      console.error("Invalid token:", error);
-      logout();
+  const handleToken = (token: string | null) => {
+    if (token) {
+      try {
+        const decodedUser = jwtDecode<User>(token);
+        setUser(decodedUser);
+        setToken(token);
+        localStorage.setItem('authToken', token);
+      } catch (error) {
+        console.error("Invalid token:", error);
+        logout();
+      }
     }
   }
 
@@ -51,9 +50,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('authToken');
     setToken(null);
     setUser(null);
-    // Chuyển hướng tới backend để đăng xuất khỏi Keycloak
     window.location.href = 'http://localhost:3001/api/auth/logout';
-};
+  };
 
   return (
     <AuthContext.Provider value={{ isAuthenticated: !!token, user, token, login, logout }}>
