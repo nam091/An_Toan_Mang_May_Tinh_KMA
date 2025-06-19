@@ -1,60 +1,78 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Lock } from "lucide-react";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-const Index = () => {
+const IndexPage = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
 
-  const handleLogin = () => {
+  // Chuyển hướng người dùng đến trang tương ứng nếu đã đăng nhập
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      // Xác định vai trò từ Keycloak hoặc đăng ký user trong hệ thống
+      const role = sessionStorage.getItem('selectedRole') || 'student'; // Mặc định là student
+      
+      switch(role) {
+        case 'admin':
+          navigate('/admin');
+          break;
+        case 'teacher':
+          navigate('/teacher');
+          break;
+        default:
+          navigate('/student');
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  const handleLogin = (role: string) => {
     setIsLoading(true);
-    window.location.href = "http://localhost:3001/api/auth/login";
+    // Lưu vai trò đã chọn để xử lý sau khi đăng nhập SSO thành công
+    sessionStorage.setItem('selectedRole', role);
+    
+    // Giả lập login vì chúng ta chưa tích hợp Keycloak
+    // Thông thường bạn sẽ gọi login(token) với token từ Keycloak
+    window.location.href = '/api/auth/login';
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8 animate-fade-in">
-        <div className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full">
-              <Shield className="h-8 w-8 text-white" />
-            </div>
+    <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-md">
+        <h1 className="text-3xl font-bold text-center mb-8">Hệ thống quản lý điểm</h1>
+        <div className="bg-white shadow-md rounded p-8">
+          <h2 className="text-2xl font-semibold text-center mb-6">Đăng nhập</h2>
+          <p className="text-gray-600 text-center mb-6">Vui lòng chọn vai trò của bạn</p>
+          
+          <div className="space-y-4">
+            <button
+              onClick={() => handleLogin('student')}
+              disabled={isLoading}
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition"
+            >
+              {isLoading ? 'Đang xử lý...' : 'Sinh viên'}
+            </button>
+            
+            <button
+              onClick={() => handleLogin('teacher')}
+              disabled={isLoading}
+              className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition"
+            >
+              {isLoading ? 'Đang xử lý...' : 'Giảng viên'}
+            </button>
+            
+            <button
+              onClick={() => handleLogin('admin')}
+              disabled={isLoading}
+              className="w-full bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-600 transition"
+            >
+              {isLoading ? 'Đang xử lý...' : 'Quản trị viên'}
+            </button>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Hệ Thống Quản Lý Điểm
-          </h1>
-          <p className="text-gray-600">Học viện Kỹ thuật Mật mã - KMA</p>
         </div>
-
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-semibold text-center">Đăng Nhập</CardTitle>
-            <CardDescription className="text-center">
-              Sử dụng tài khoản do nhà trường cấp
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Button 
-                onClick={handleLogin}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
-                disabled={isLoading}
-              >
-                {isLoading ? "Đang chuyển hướng..." : "Đăng nhập với KMA"}
-              </Button>
-            </div>
-
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Lock className="h-4 w-4" />
-                <span>Xác thực qua Hệ thống Tập trung</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
 };
 
-export default Index;
+export default IndexPage;

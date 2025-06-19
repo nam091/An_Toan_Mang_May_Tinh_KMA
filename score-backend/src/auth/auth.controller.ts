@@ -1,52 +1,55 @@
-import { Controller, Get, Req, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req, Res } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
-import { ConfigService } from '@nestjs/config';
+import { UsersService } from '../users/users.service';
 
 @Controller('api/auth')
 export class AuthController {
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService,
-    private configService: ConfigService, // Inject ConfigService
+    private jwtService: JwtService
   ) {}
 
   @Get('login')
   @UseGuards(AuthGuard('keycloak'))
   login() {
-    // redirect to Keycloak
+    // Redirect to Keycloak handled by passport
   }
 
   @Get('callback')
   @UseGuards(AuthGuard('keycloak'))
-  async callback(@Req() req, @Res() res: Response) { // Bỏ @Res({ passthrough: true })
+  async callback(@Req() req, @Res() res: Response) {
+    // req.user chứa thông tin từ strategy.validate
     const user = await this.usersService.upsertFromKeycloak(req.user);
 
+    // Tạo JWT để client sử dụng
     const payload = {
       sub: user.sub,
       email: user.email,
-      roles: req.user.roles || [],
+      roles: user.roles || ['student']
     };
 
-    const accessToken = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload);
 
-    // Chuyển hướng về frontend với token trong query params
-    // Cổng 5173 là cổng mặc định của Vite
-    res.redirect(`http://localhost:5173/auth/callback?token=${accessToken}`);
+    // Trả về token và thông tin người dùng
+    return res.json({
+      access_token: token,
+      user: {
+        id: user.id,
+        sub: user.sub,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: user.roles || ['student']
+      }
+    });
   }
 
   @Get('logout')
+  @UseGuards(AuthGuard('jwt'))
   logout(@Req() req, @Res() res: Response) {
-    // Xóa session/cookie phía NestJS nếu có
-    // req.logout(); // Nếu bạn dùng session
-
-    // Chuyển hướng đến endpoint logout của Keycloak
-    const issuerUrl = this.configService.get<string>('KEYCLOAK_ISSUER_URL');
-    const postLogoutRedirectUri = 'http://localhost:5173'; // Trang sẽ quay về sau khi logout
-    const keycloakLogoutUrl = `<span class="math-inline">\{issuerUrl\}/protocol/openid\-connect/logout?post\_logout\_redirect\_uri\=</span>{encodeURIComponent(postLogoutRedirectUri)}`;
-
-    res.redirect(keycloakLogoutUrl);
+    // Có thể thêm logic logout ở đây nếu cần
+    return res.json({ success: true, message: 'Đăng xuất thành công' });
   }
 }

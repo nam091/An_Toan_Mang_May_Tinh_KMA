@@ -1,7 +1,10 @@
-import { Entity, Column, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'users' })
 export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
+
   @PrimaryColumn()
   sub: string;          // Keycloak subject
 
@@ -13,4 +16,7 @@ export class User {
 
   @Column()
   lastName: string;
+  
+  @Column('simple-array', { nullable: true })
+  roles: string[];
 }

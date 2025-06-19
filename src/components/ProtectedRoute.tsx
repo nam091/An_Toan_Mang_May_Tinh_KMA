@@ -1,15 +1,27 @@
+import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
-const ProtectedRoute = () => {
-  const { isAuthenticated } = useAuth();
+interface ProtectedRouteProps {
+  requiredRole?: string;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) => {
+  const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) {
-    // Nếu chưa xác thực, chuyển hướng về trang đăng nhập
     return <Navigate to="/" replace />;
   }
 
-  // Nếu đã xác thực, hiển thị component con (trang dashboard)
+  if (requiredRole) {
+    const userRole = user?.roles?.[0] || '';
+    if (userRole !== requiredRole) {
+      // Người dùng không có quyền truy cập trang này
+      return <Navigate to="/unauthorized" replace />;
+    }
+  }
+
+  // Người dùng đã xác thực và có quyền truy cập
   return <Outlet />;
 };
 

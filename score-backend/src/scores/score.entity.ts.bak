@@ -1,0 +1,27 @@
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { User } from '../users/user.entity';
+
+@Entity({ name: 'scores' })
+export class Score {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column('decimal', { precision: 5, scale: 2 })
+  value: number;
+
+  @Column()
+  studentId: number;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'studentId' })
+  student: User;
+
+  @Column()
+  subjectId: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column({ default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+} 
