@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import keycloakInstance from '@/config/keycloak';
 
 interface User {
   sub: string;
@@ -52,6 +53,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     window.location.href = 'http://localhost:3001/api/auth/logout';
   };
+  
+  // Token refresh function
+  const refreshToken = async () => {
+    try {
+      if (keycloakInstance.isTokenExpired()) {
+        const refreshed = await keycloakInstance.updateToken(30);
+        if (refreshed) {
+          console.log('Token refreshed successfully');
+          // Có thể cập nhật state nếu cần
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh token', error);
+      logout(); // Now logout is in scope
+    }
+  };
+
+  // Token refresh interval
+  useEffect(() => {
+    if (token) { // Using token instead of isAuthenticated
+      const interval = setInterval(() => {
+        refreshToken();
+      }, 60000); // Kiểm tra mỗi phút
+      
+      return () => clearInterval(interval);
+    }
+  }, [token]); // Dependency on token instead of isAuthenticated
 
   return (
     <AuthContext.Provider value={{ isAuthenticated: !!token, user, token, login, logout }}>
